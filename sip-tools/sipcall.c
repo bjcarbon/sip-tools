@@ -60,6 +60,7 @@ struct app_config {
 	char *sip_password;
 	char *phone_number;
 	char *tts;
+	char *wav_file;
 	char *tts_file;
 	int record_call;
 	char *record_file;
@@ -152,6 +153,12 @@ int main(int argc, char *argv[])
 				continue;
 			}
 			
+			// check for wave file to play (no tts) 
+			if (try_get_argument(arg, "-wav", &app_cfg.wav_file, argc, argv) == 1)
+			{
+				continue;
+			}
+			
 			// check for record call option
 			if (try_get_argument(arg, "-ttsf", &app_cfg.tts_file, argc, argv) == 1)
 			{
@@ -190,7 +197,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	
-	if (!app_cfg.sip_domain || !app_cfg.sip_user || !app_cfg.sip_password || !app_cfg.phone_number || !app_cfg.tts)
+	if (!app_cfg.sip_domain || !app_cfg.sip_user || !app_cfg.sip_password || !app_cfg.phone_number || !(app_cfg.tts || app_cfg.wav_file))
 	{
 		// too few arguments specified - display usage info and exit app
 		usage(1);
@@ -205,8 +212,10 @@ int main(int argc, char *argv[])
 	signal(SIGINT, signal_handler);
 	signal(SIGKILL, signal_handler);
 	
-	// synthesize speech 
-	synthesize_speech(app_cfg.tts_file);	
+	if (!app_cfg.wav_file) {
+		// synthesize speech 
+		synthesize_speech(app_cfg.tts_file);	
+	}
 	
 	// setup up sip library pjsua
 	setup_sip();
@@ -245,6 +254,8 @@ static void usage(int error)
 	puts  ("  -sp=string    Set sip password.");
 	puts  ("  -pn=string    Set target phone number to call");
 	puts  ("  -tts=string   Text to speak");
+	puts  ("  or");
+	puts  ("  -wav=string   Wave file to play (no tts)");
     puts  ("");
 	puts  ("Optional options:");
 	puts  ("  -ttsf=string  TTS speech file name to save text");
@@ -402,7 +413,11 @@ static void create_player(pjsua_call_id call_id)
 	log_message("Creating player ... ");
 	
 	// create player for playback media		
-	status = pjsua_player_create(pj_cstr(&name, app_cfg.tts_file), 0, &play_id);
+	if (app_cfg.wav_file) {
+		status = pjsua_player_create(pj_cstr(&name, app_cfg.wav_file), 0, &play_id);
+	} else {
+		status = pjsua_player_create(pj_cstr(&name, app_cfg.tts_file), 0, &play_id);
+	}
 	if (status != PJ_SUCCESS) error_exit("Error playing sound-playback", status);
 		
 	// connect active call to media player
