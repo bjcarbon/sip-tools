@@ -218,7 +218,9 @@ int main(int argc, char *argv[])
 	make_sip_call();
 	
 	// app loop
-	for (;;) { }
+	for (;;) { 
+		pj_thread_sleep(100); 
+	}
 	
 	// exit app
 	app_exit();
