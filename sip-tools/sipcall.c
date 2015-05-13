@@ -56,6 +56,7 @@ Lesser General Public License for more details.
 // struct for app configuration settings
 struct app_config { 
 	char *sip_domain;
+	char *sip_realm;
 	char *sip_user;
 	char *sip_password;
 	char *phone_number;
@@ -108,6 +109,7 @@ int main(int argc, char *argv[])
 	app_cfg.record_call = 0;
 	app_cfg.repetition_limit = 3;
 	app_cfg.silent_mode = 0; 
+	app_cfg.sip_realm = "*";
 
 	// parse arguments
 	if (argc > 1)
@@ -128,6 +130,13 @@ int main(int argc, char *argv[])
 			{
 				continue;
 			}
+			
+			// check for sip realm
+			if (try_get_argument(arg, "-sr", &app_cfg.sip_realm, argc, argv) == 1)
+			{
+				continue;
+			}
+			
 			
 			// check for sip user
 			if (try_get_argument(arg, "-su", &app_cfg.sip_user, argc, argv) == 1)
@@ -250,6 +259,7 @@ static void usage(int error)
     puts  ("");
     puts  ("Mandatory options:");
     puts  ("  -sd=string    Set sip provider domain.");
+    puts  ("  -sr=string    Set sip realm (default '*')");
 	puts  ("  -su=string    Set sip username.");
 	puts  ("  -sp=string    Set sip password.");
 	puts  ("  -pn=string    Set target phone number to call");
@@ -359,16 +369,18 @@ static void register_sip(void)
 	// build sip-user-url
 	char sip_user_url[40];
 	sprintf(sip_user_url, "sip:%s@%s", app_cfg.sip_user, app_cfg.sip_domain);
+	//sprintf(sip_user_url, "sip:%s@192.168.172.1", app_cfg.sip_user);
 	
 	// build sip-provder-url
 	char sip_provider_url[40];
 	sprintf(sip_provider_url, "sip:%s", app_cfg.sip_domain);
+	//sprintf(sip_provider_url, "sip:192.168.172.1");
 	
 	// create and define account
 	cfg.id = pj_str(sip_user_url);
 	cfg.reg_uri = pj_str(sip_provider_url);
 	cfg.cred_count = 1;
-	cfg.cred_info[0].realm = pj_str(app_cfg.sip_domain);
+	cfg.cred_info[0].realm = pj_str(app_cfg.sip_realm);
 	cfg.cred_info[0].scheme = pj_str("digest");
 	cfg.cred_info[0].username = pj_str(app_cfg.sip_user);
 	cfg.cred_info[0].data_type = PJSIP_CRED_DATA_PLAIN_PASSWD;
@@ -391,6 +403,7 @@ static void make_sip_call()
 	// build target sip-url
 	char sip_target_url[40];
 	sprintf(sip_target_url, "sip:%s@%s", app_cfg.phone_number, app_cfg.sip_domain);
+	//sprintf(sip_target_url, "sip:%s@192.168.172.1", app_cfg.phone_number, app_cfg.sip_domain);
 	
 	// start call with sip-url
 	pj_str_t uri = pj_str(sip_target_url);
