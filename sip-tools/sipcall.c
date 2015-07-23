@@ -231,6 +231,9 @@ int main(int argc, char *argv[])
 	
 	// create account and register to sip server
 	register_sip();
+		
+	// Short delay beetween registering and calling
+	pj_thread_sleep(500); 
 	
 	// initiate call
 	make_sip_call();
